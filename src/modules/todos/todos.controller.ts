@@ -27,7 +27,7 @@ import { Cat, CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { FindTodosQueryDto } from './dto/find-todos-query.dto';
 import { FileUploadDto } from './dto/file-upload.dto';
-import { SetTodoDto } from './dto/set-isCompleted.dto';
+import { SetTodocompletedDto } from './dto/set-isCompleted.dto';
 
 const response = {
   type: 'object',
@@ -102,7 +102,10 @@ export class TodosController {
 
   @Patch(':id/set-completed')
   @ApiOperation({ summary: 'Set todo as completed or in-completed' })
-  setCompleted(@Param('id') id: string, @Body() isCompleted: SetTodoDto) {
+  setCompleted(
+    @Param('id') id: string,
+    @Body() isCompleted: SetTodocompletedDto,
+  ) {
     return this.todosService.setCompleted(id, isCompleted.isCompleted);
   }
 

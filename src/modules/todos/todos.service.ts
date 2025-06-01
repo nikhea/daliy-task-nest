@@ -83,21 +83,32 @@ export class TodosService {
 
   async setCompleted(id: string, isCompleted: boolean) {
     try {
+      if (typeof isCompleted !== 'boolean') {
+        return {
+          message: 'Invalid input: isCompleted must be a boolean',
+          statusCode: 400,
+        };
+      }
+
       const existTodo = await this.todoRepository.findById(id);
 
       if (!existTodo) {
         return {
-          message: `todo  not found`,
+          message: 'Todo not found',
+          statusCode: 404,
         };
       }
-      const data = this.todoRepository.setCompleted(id, isCompleted);
+
+      const data = await this.todoRepository.setCompleted(id, isCompleted);
+
       return {
-        message: `Todo updated successfully`,
+        message: 'Todo updated successfully',
         data,
       };
     } catch (error) {
       return {
-        error,
+        message: 'Something went wrong',
+        error: error,
       };
     }
   }

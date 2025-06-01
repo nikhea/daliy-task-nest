@@ -32,7 +32,7 @@ export class TodoRepository {
     return this.todoModel
       .findOneAndUpdate(
         { _id: id, isDeleted: false },
-        { isCompleted },
+        { isCompleted: isCompleted },
         { new: true },
       )
       .exec();
