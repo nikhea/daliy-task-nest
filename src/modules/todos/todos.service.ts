@@ -1,26 +1,125 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable } from '@nestjs/common';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
+import { TodoRepository } from './repository/todo.repository';
+import { FindTodosQueryDto } from './dto/find-todos-query.dto';
 
 @Injectable()
 export class TodosService {
-  create(createTodoDto: CreateTodoDto) {
-    return 'This action adds a new todo';
+  constructor(private readonly todoRepository: TodoRepository) {}
+
+  async create(createTodoDto: CreateTodoDto) {
+    try {
+      const data = await this.todoRepository.create(createTodoDto);
+      return {
+        message: 'This action adds a new todos',
+        data,
+      };
+    } catch (error) {
+      return {
+        error,
+      };
+    }
   }
 
-  findAll() {
-    return `This action returns all todos`;
+  async findAll(query: FindTodosQueryDto) {
+    try {
+      const data = await this.todoRepository.findAll();
+      return {
+        message: `This action returns all employees`,
+        query,
+        data,
+      };
+    } catch (error) {
+      return {
+        error,
+      };
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} todo`;
+  async findOne(id: string) {
+    try {
+      const data = await this.todoRepository.findById(id);
+
+      if (!data) {
+        return {
+          message: `user not found`,
+          data,
+        };
+      }
+
+      return {
+        message: `This action returns all employees`,
+        data,
+      };
+    } catch (error) {
+      return {
+        error,
+      };
+    }
   }
 
-  update(id: number, updateTodoDto: UpdateTodoDto) {
-    return `This action updates a #${id} todo`;
+  async update(id: string, updateTodoDto: UpdateTodoDto) {
+    try {
+      const existTodo = await this.todoRepository.findById(id);
+
+      if (!existTodo) {
+        return {
+          message: `todo  not found`,
+        };
+      }
+      const data = await this.todoRepository.update(id, updateTodoDto);
+      return {
+        message: `Todo updated successfully`,
+        data,
+      };
+    } catch (error) {
+      return {
+        error,
+      };
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} todo`;
+  async setCompleted(id: string, isCompleted: boolean) {
+    try {
+      const existTodo = await this.todoRepository.findById(id);
+
+      if (!existTodo) {
+        return {
+          message: `todo  not found`,
+        };
+      }
+      const data = this.todoRepository.setCompleted(id, isCompleted);
+      return {
+        message: `Todo updated successfully`,
+        data,
+      };
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  }
+
+  async remove(id: string) {
+    try {
+      const existTodo = await this.todoRepository.findById(id);
+
+      if (!existTodo) {
+        return {
+          message: `todo  not found`,
+        };
+      }
+      const data = await this.todoRepository.delete(id);
+      return {
+        message: `This action removes a #${id} employee`,
+        data,
+      };
+    } catch (error) {
+      return {
+        error,
+      };
+    }
   }
 }

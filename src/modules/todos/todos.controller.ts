@@ -27,6 +27,7 @@ import { Cat, CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { FindTodosQueryDto } from './dto/find-todos-query.dto';
 import { FileUploadDto } from './dto/file-upload.dto';
+import { SetTodoDto } from './dto/set-isCompleted.dto';
 
 const response = {
   type: 'object',
@@ -72,9 +73,7 @@ export class TodosController {
   })
   @ApiResponse({ status: 404, description: 'No todos found' })
   findAll(@Query() query: FindTodosQueryDto) {
-    console.log(query);
-
-    return this.todosService.findAll();
+    return this.todosService.findAll(query);
   }
 
   @Get(':id')
@@ -82,7 +81,7 @@ export class TodosController {
   @ApiResponse({ status: 200, description: 'Todo found' })
   @ApiResponse({ status: 404, description: 'Todo not found' })
   findOne(@Param('id') id: string) {
-    return this.todosService.findOne(+id);
+    return this.todosService.findOne(id);
   }
 
   @Patch(':id')
@@ -90,7 +89,7 @@ export class TodosController {
   @ApiResponse({ status: 200, description: 'Todo updated successfully' })
   @ApiResponse({ status: 404, description: 'Todo not found' })
   update(@Param('id') id: string, @Body() updateTodoDto: UpdateTodoDto) {
-    return this.todosService.update(+id, updateTodoDto);
+    return this.todosService.update(id, updateTodoDto);
   }
 
   @Delete(':id')
@@ -98,7 +97,13 @@ export class TodosController {
   @ApiResponse({ status: 200, description: 'Todo deleted successfully' })
   @ApiResponse({ status: 404, description: 'Todo not found' })
   remove(@Param('id') id: string) {
-    return this.todosService.remove(+id);
+    return this.todosService.remove(id);
+  }
+
+  @Patch(':id/set-completed')
+  @ApiOperation({ summary: 'Set todo as completed or in-completed' })
+  setCompleted(@Param('id') id: string, @Body() isCompleted: SetTodoDto) {
+    return this.todosService.setCompleted(id, isCompleted.isCompleted);
   }
 
   @Patch(':id/upload')

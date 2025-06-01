@@ -10,9 +10,24 @@ export class Todo {
     minlength: 2,
     maxlength: 50,
   })
-  name: string;
+  title: string;
 
+  @Prop({ type: String })
+  description: string;
+
+  @Prop({ type: Date })
+  dueDate: Date;
+
+  @Prop({ type: Boolean, default: false })
+  isCompleted: boolean;
+
+  @Prop({ type: Boolean, default: false })
+  isDeleted: boolean;
+
+  @Prop({ type: Date })
   createdAt?: Date;
+
+  @Prop({ type: Date })
   updatedAt?: Date;
 }
 
