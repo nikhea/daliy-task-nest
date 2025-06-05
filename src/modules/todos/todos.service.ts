@@ -4,6 +4,7 @@ import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { TodoRepository } from './repository/todo.repository';
 import { FindTodosQueryDto } from './dto/find-todos-query.dto';
+import { TAuthUser } from 'src/common/decorator/user.decorator';
 
 @Injectable()
 export class TodosService {
@@ -23,8 +24,10 @@ export class TodosService {
     }
   }
 
-  async findAll(query: FindTodosQueryDto) {
+  async findAll(query: FindTodosQueryDto, user: TAuthUser) {
     try {
+      console.log({ xc: user });
+
       const data = await this.todoRepository.findAll();
       return {
         message: `This action returns all employees`,

@@ -12,15 +12,16 @@ export function setupSwagger(
     .setVersion('1.0')
     .addServer(`${server_url}`, 'Development Server')
     // .addServer('https://api.yourdomain.com', 'Production Server')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'Enter JWT token',
-      },
-      'access-token',
-    )
+    .addBearerAuth
+    // {
+    //   type: 'http',
+    //   scheme: 'bearer',
+    //   bearerFormat: 'JWT',
+    //   description: 'Enter JWT token',
+    // },
+    // 'access-token',
+    ()
+    .addCookieAuth('access_token')
     .addGlobalResponse({
       status: 500,
       description: 'Internal server error',

@@ -1,5 +1,8 @@
-import { Express } from 'express';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { Express, Request } from 'express';
+import {
+  FileFieldsInterceptor,
+  // FileInterceptor,
+} from '@nestjs/platform-express';
 import {
   Controller,
   Get,
@@ -10,7 +13,10 @@ import {
   Delete,
   Query,
   UseInterceptors,
-  UploadedFile,
+  // UploadedFile,
+  UploadedFiles,
+  BadRequestException,
+  // UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,7 +26,7 @@ import {
   ApiOkResponse,
   ApiConsumes,
   ApiBody,
-  ApiBearerAuth,
+  // ApiBearerAuth,
 } from '@nestjs/swagger';
 import { TodosService } from './todos.service';
 import { Cat, CreateTodoDto } from './dto/create-todo.dto';
@@ -28,6 +34,14 @@ import { UpdateTodoDto } from './dto/update-todo.dto';
 import { FindTodosQueryDto } from './dto/find-todos-query.dto';
 import { FileUploadDto } from './dto/file-upload.dto';
 import { SetTodocompletedDto } from './dto/set-isCompleted.dto';
+// import { AuthAndVerificationGuard } from 'src/common/guards/protect.guard';
+import { CurrentUser } from 'src/common/decorator/user.decorator';
+import { TAuthUser } from 'src/common/decorator/user.decorator';
+import {
+  fileNameAndSizeMixUpload,
+  multerOptions,
+  validateUploadedFiles,
+} from '../../common/constant/constant';
 
 const response = {
   type: 'object',
@@ -49,11 +63,13 @@ const response = {
 };
 
 @ApiTags('todos')
+// @UseGuards(AuthGuard)
+// @UseGuards(AuthAndVerificationGuard)
+// @ApiBearerAuth()
 @Controller('todos')
 export class TodosController {
   constructor(private readonly todosService: TodosService) {}
 
-  @ApiBearerAuth()
   @Post()
   @ApiOperation({ summary: 'Create a new todo' })
   @ApiCreatedResponse({
@@ -72,8 +88,8 @@ export class TodosController {
     schema: response,
   })
   @ApiResponse({ status: 404, description: 'No todos found' })
-  findAll(@Query() query: FindTodosQueryDto) {
-    return this.todosService.findAll(query);
+  findAll(@Query() query: FindTodosQueryDto, @CurrentUser() user: TAuthUser) {
+    return this.todosService.findAll(query, user);
   }
 
   @Get(':id')
@@ -113,13 +129,52 @@ export class TodosController {
   @ApiOperation({ summary: 'Upload file' })
   @ApiResponse({ status: 200, description: 'File uploaded successfully' })
   @ApiResponse({ status: 404, description: 'File not found' })
-  @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    description: 'List of cats',
+    description: 'List Of Uploaded FIles',
     type: FileUploadDto,
   })
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
-    console.log(file);
+  // @ApiCreatedResponse({
+  //   description: 'file uploaded successfully',
+  //   type: UploadDto,
+  // })
+  @UseInterceptors(
+    FileFieldsInterceptor(fileNameAndSizeMixUpload(), multerOptions),
+  )
+  uploadFile(
+    @Param('id') id: string,
+    @UploadedFiles()
+    uploadedFiles: {
+      file?: Express.Multer.File[];
+      files?: Express.Multer.File[];
+    },
+    @Body() uploadDto: FileUploadDto,
+  ) {
+    if (!validateUploadedFiles(uploadedFiles)) {
+      throw new BadRequestException('No files uploaded');
+    }
+
+    const singleFile = uploadedFiles.file?.[0];
+    const multipleFiles = uploadedFiles.files || [];
+
+    if (!singleFile && multipleFiles.length === 0) {
+      throw new BadRequestException('At least one file must be uploaded');
+    }
+    return {
+      message: 'Mixed files uploaded successfully',
+      id,
+      uploadDto: {
+        description: uploadDto.description,
+      },
+      singleFile: singleFile?.originalname || null,
+      multipleFiles: multipleFiles.map((f) => ({
+        name: f.originalname,
+        mime: f.mimetype,
+        size: f.size,
+        fileName: f.fieldname,
+        file: f.filename,
+      })),
+      totalCount: (singleFile ? 1 : 0) + multipleFiles.length,
+    };
   }
 }

@@ -7,6 +7,7 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { ConfigService } from '@nestjs/config';
 import { setupSwagger } from './setup/swagger-setup';
 import { setupLogInit } from './setup/initLog-setup';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -23,7 +24,11 @@ async function bootstrap() {
   app.disable('x-powered-by');
   app.setGlobalPrefix(api_version);
   app.set('trust proxy', 'loopback');
-
+  app.use(cookieParser());
+  app.enableCors({
+    origin: '*',
+    credentials: true,
+  });
   app.useGlobalPipes(new ZodValidationPipe());
 
   setupSwagger(app, api_version, server_url);
