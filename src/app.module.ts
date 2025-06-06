@@ -1,6 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/require-await */
 
-import { Module } from '@nestjs/common';
+import { ExecutionContext, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TodosModule } from './modules/todos/todos.module';
 import { UsersModule } from './modules/users/users.module';
@@ -109,6 +113,10 @@ import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis'
         storage: new ThrottlerStorageRedisService(
           config.get<string>('REDIS_URL_LOCAL'),
         ),
+        getTracker: (req: Record<string, any>, context: ExecutionContext) => {
+          const tenant = req.headers['x-tenant-ABC'] || req.ip;
+          return tenant;
+        },
       }),
       inject: [ConfigService],
     }),

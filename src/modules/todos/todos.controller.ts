@@ -43,7 +43,7 @@ import {
   multerOptions,
   validateUploadedFiles,
 } from '../../common/constant/constant';
-import { seconds, Throttle } from '@nestjs/throttler';
+import { seconds, SkipThrottle, Throttle } from '@nestjs/throttler';
 // import { CacheInterceptor } from '@nestjs/cache-manager';
 
 const response = {
@@ -91,6 +91,13 @@ export class TodosController {
   //     limit: 7,
   //   },
   // })
+  @SkipThrottle({
+    auth: true,
+    public: true,
+    // short: false,
+    // medium: false,
+    // long: false,
+  })
   @Get()
   @ApiOperation({ summary: 'Get all todos' })
   @ApiOkResponse({
