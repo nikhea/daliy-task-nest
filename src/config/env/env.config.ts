@@ -18,6 +18,8 @@ export default (): EnvVars => {
     API_VERSION: parsed.data.API_VERSION,
     ALLOWED_ORIGINS: parsed.data.ALLOWED_ORIGINS,
     NODE_ENV: parsed.data.NODE_ENV,
+    REDIS_URL_LOCAL: parsed.data.REDIS_URL_LOCAL,
+    REDIS_URL: parsed.data.REDIS_URL,
     // RABBITMQ_URI: parsed.data.RABBITMQ_URI,
   };
 };

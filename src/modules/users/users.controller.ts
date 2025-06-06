@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express'; // This is the key import!
 import { UsersService } from './users.service';
+import { SkipThrottle } from '@nestjs/throttler';
 
 // import { ApiBearerAuth } from '@nestjs/swagger';
 // import { AuthAndVerificationGuard } from 'src/common/guards/protect.guard';
@@ -35,6 +36,7 @@ export class UsersController {
   //   return this.usersService.findAll();
   // }
 
+  @SkipThrottle({ short: true, medium: true, long: true })
   @Get(':id')
   findOne(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
     const token = '1234';
@@ -46,11 +48,13 @@ export class UsersController {
       maxAge: 1 * 60 * 1000,
     });
 
-    return {
-      access_token: token,
+    return this.usersService.findOne(id);
 
-      // return this.usersService.findOne(+id);
-    };
+    // return {
+    //   access_token: token,
+
+    // return this.usersService.findOne(+id);
+    // };
   }
 
   // @Patch(':id')
