@@ -28,7 +28,7 @@ import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis'
       useFactory: async (configService: ConfigService) => {
         return {
           stores: [
-            createKeyv(configService.get<string>('REDIS_URL')),
+            createKeyv(configService.get<string>('REDIS_URL_LOCAL')),
             new Keyv({
               store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }),
             }),
@@ -107,7 +107,7 @@ import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis'
         ],
         errorMessage: 'Too many requests, please try again later.',
         storage: new ThrottlerStorageRedisService(
-          config.get<string>('REDIS_URL'),
+          config.get<string>('REDIS_URL_LOCAL'),
         ),
       }),
       inject: [ConfigService],
