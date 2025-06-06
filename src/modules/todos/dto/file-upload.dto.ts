@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@anatine/zod-openapi';
 
@@ -30,6 +30,23 @@ export class FileUploadDto {
   description?: string;
 }
 
+export class SingleFileUploadDto {
+  @ApiProperty({
+    type: 'string',
+    format: 'binary',
+    description: 'File to upload',
+  })
+  file: any;
+
+  @ApiProperty({
+    description: 'file description',
+    example: 'Profile picture',
+    required: true,
+  })
+  @IsString()
+  @IsNotEmpty()
+  description: string;
+}
 // export class UploadDto {
 //   @ApiProperty({
 //     description: 'Detailed description',

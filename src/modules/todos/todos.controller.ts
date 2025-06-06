@@ -1,6 +1,7 @@
 import { Express, Request } from 'express';
 import {
   FileFieldsInterceptor,
+  FileInterceptor,
   // FileInterceptor,
 } from '@nestjs/platform-express';
 import {
@@ -13,7 +14,7 @@ import {
   Delete,
   Query,
   UseInterceptors,
-  // UploadedFile,
+  UploadedFile,
   UploadedFiles,
   BadRequestException,
   // UseGuards,
@@ -32,7 +33,7 @@ import { TodosService } from './todos.service';
 import { Cat, CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { FindTodosQueryDto } from './dto/find-todos-query.dto';
-import { FileUploadDto } from './dto/file-upload.dto';
+import { FileUploadDto, SingleFileUploadDto } from './dto/file-upload.dto';
 import { SetTodocompletedDto } from './dto/set-isCompleted.dto';
 // import { AuthAndVerificationGuard } from 'src/common/guards/protect.guard';
 import { CurrentUser } from 'src/common/decorator/user.decorator';
@@ -42,6 +43,7 @@ import {
   multerOptions,
   validateUploadedFiles,
 } from '../../common/constant/constant';
+// import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
 const response = {
   type: 'object',
@@ -66,6 +68,7 @@ const response = {
 // @UseGuards(AuthGuard)
 // @UseGuards(AuthAndVerificationGuard)
 // @ApiBearerAuth()
+// @UseInterceptors(CacheInterceptor)
 @Controller('todos')
 export class TodosController {
   constructor(private readonly todosService: TodosService) {}
@@ -116,6 +119,36 @@ export class TodosController {
     return this.todosService.remove(id);
   }
 
+  @Patch(':id/upload/single')
+  @ApiOperation({ summary: 'Upload single file' })
+  @ApiResponse({ status: 200, description: 'File uploaded successfully' })
+  @ApiResponse({ status: 404, description: 'File not found' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Single file upload with optional description',
+    type: SingleFileUploadDto,
+  })
+  @UseInterceptors(FileInterceptor('file', multerOptions))
+  uploadFileWithDto(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() uploadDto: SingleFileUploadDto,
+  ) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+
+    return {
+      message: 'File uploaded successfully',
+      id,
+      fileName: file.filename,
+      originalName: file.originalname,
+      mimeType: file.mimetype,
+      size: file.size,
+      description: uploadDto.description || null,
+    };
+  }
+
   @Patch(':id/set-completed')
   @ApiOperation({ summary: 'Set todo as completed or in-completed' })
   setCompleted(
@@ -125,8 +158,8 @@ export class TodosController {
     return this.todosService.setCompleted(id, isCompleted.isCompleted);
   }
 
-  @Patch(':id/upload')
-  @ApiOperation({ summary: 'Upload file' })
+  @Patch(':id/upload/multiple')
+  @ApiOperation({ summary: 'Upload multiple files' })
   @ApiResponse({ status: 200, description: 'File uploaded successfully' })
   @ApiResponse({ status: 404, description: 'File not found' })
   @ApiConsumes('multipart/form-data')
