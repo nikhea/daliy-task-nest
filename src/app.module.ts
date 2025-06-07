@@ -20,6 +20,8 @@ import { ConfigService } from '@nestjs/config';
 import { seconds, ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import { BullModule } from '@nestjs/bullmq';
+import { VideoModule } from './modules/video/video.module';
 
 @Module({
   imports: [
@@ -120,10 +122,25 @@ import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis'
       }),
       inject: [ConfigService],
     }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        connection: {
+          url: configService.get<string>('REDIS_URL_LOCAL'),
+        },
+        defaultJobOptions: {
+          removeOnComplete: true,
+          attempts: 3,
+        },
+      }),
+      inject: [ConfigService],
+    }),
+
     MulterModule.register(multerOptions),
     MongoDBConnectionModule,
     TodosModule,
     UsersModule,
+    VideoModule,
   ],
   controllers: [],
   providers: [
