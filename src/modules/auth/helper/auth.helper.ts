@@ -1,10 +1,15 @@
-import { Injectable } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthHelper {
+  private readonly logger = new Logger(AuthHelper.name);
+
   constructor(private jwtService: JwtService) {}
   async hashPassword(password: string): Promise<string> {
     const saltRounds = 10;
@@ -20,13 +25,18 @@ export class AuthHelper {
     return comparePassword;
   }
 
-  generateToken(userId: string): { accessToken: string } {
+  generateToken(userId: string): {
+    accessToken: string;
+    refreshToken: string;
+  } {
     const accessToken = this.jwtService.sign({ userId }, { expiresIn: '1h' });
+    const refreshToken = uuidv4();
     return {
       accessToken,
+      refreshToken,
     };
   }
-  getCokkiesOptions(name: string) {
+  getCookieSettings(name: string) {
     return {
       name,
       settings: {
@@ -36,5 +46,16 @@ export class AuthHelper {
         maxAge: 1 * 60 * 1000,
       },
     };
+  }
+  attachTokenToResponse(
+    res: Response,
+    tokenPair: { accessToken: string; refreshToken: string },
+  ) {
+    const cookieOptions = this.getCookieSettings('access_token');
+    res.cookie(
+      cookieOptions.name,
+      tokenPair.accessToken,
+      cookieOptions.settings,
+    );
   }
 }

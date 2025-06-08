@@ -7,16 +7,19 @@ import {
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { AuthRepository } from './repository/auth.repository';
+import { RefreshTokenRepository } from './repository/refresh-token.schema';
 import { ServiceResponse } from '../todos/todos.service';
 import { LogInAuthDto } from './dto/login-auth.dto';
 import { AuthHelper } from './helper/auth.helper';
 import { Response } from 'express';
+import { RefreshTokenAuthDto } from './dto/refresh-token.dto';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   constructor(
     private readonly authRepository: AuthRepository,
+    private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly authHelper: AuthHelper,
   ) {}
 
@@ -61,21 +64,76 @@ export class AuthService {
           message: 'wrong credentials',
         });
       }
-
-      const token = this.authHelper.generateToken(user._id.toString());
-      const options = this.authHelper.getCokkiesOptions('access_token');
-
-      res.cookie(options.name, token.accessToken, options.settings);
-
+      const token = await this.generateAndStoreToken(user._id.toString(), res);
       return res.status(HttpStatus.OK).json({
         message: 'user logged in successfully',
-        data: token,
+        data: {
+          ...token,
+          userId: user._id,
+        },
       });
     } catch (error) {
       this.logger.error('Failed to login user', error);
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         message: 'Failed to login user',
       });
+    }
+  }
+
+  async refreshToken(
+    createAuthDto: RefreshTokenAuthDto,
+    res: Response,
+  ): Promise<ServiceResponse | any> {
+    try {
+      const token = await this.refreshTokenRepository.findOne(
+        createAuthDto.token,
+      );
+
+      if (!token) {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+          message: 'refresh token is invalid',
+        });
+      }
+      const newGeneratedTokens = await this.generateAndStoreToken(
+        token.userId.toString(),
+        res,
+      );
+      if (!newGeneratedTokens) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+          message: 'Failed to generate new tokens',
+        });
+      }
+      return res.status(HttpStatus.OK).json({
+        message: 'Refresh token stored successfully',
+        data: newGeneratedTokens,
+      });
+    } catch (error) {
+      this.logger.error('Failed to login user', error);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Failed to login user',
+      });
+    }
+  }
+
+  async generateAndStoreToken(userId: string, res: Response) {
+    try {
+      const token = this.authHelper.generateToken(userId);
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 7);
+      const userIdMongoose = this.refreshTokenRepository.setMongooseId(userId);
+      await this.refreshTokenRepository.hardDeleteByUserId(userIdMongoose);
+      await this.refreshTokenRepository.create({
+        token: token.refreshToken,
+        userId: userIdMongoose,
+        expiryDate,
+      });
+      this.authHelper.attachTokenToResponse(res, token);
+      return token;
+    } catch (error) {
+      this.logger.error('Failed to generate and store token', error);
+      throw new InternalServerErrorException(
+        'Failed to generate and store token',
+      );
     }
   }
 }
