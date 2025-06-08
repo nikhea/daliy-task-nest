@@ -3,7 +3,7 @@ import { TodosService } from './todos.service';
 import { TodosController } from './todos.controller';
 import { TodoRepository } from './repository/todo.repository';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Todo, TodoSchema } from './shcema/todo.schema';
+import { Todo, TodoSchema } from './schema/todo.schema';
 
 @Module({
   imports: [

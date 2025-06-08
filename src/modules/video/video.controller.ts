@@ -16,4 +16,16 @@ export class VideoController {
       status: 'success',
     };
   }
+
+  @Post('compress')
+  async compressVideo() {
+    await this.videoQueue.add('compressVideo', {
+      fileName: 'bun',
+      formate: 'zip',
+    });
+    return {
+      message: 'Video compresstion started',
+      status: 'success',
+    };
+  }
 }

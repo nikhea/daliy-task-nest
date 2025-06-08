@@ -8,6 +8,7 @@ export const envSchema = z.object({
   NODE_ENV: z.string().default('development'),
   REDIS_URL_LOCAL: z.string().url(),
   REDIS_URL: z.string().url(),
+  JWT_SECRET: z.string(),
   // RABBITMQ_URI: z.string().url(),
   // JWT_SECRET: z.string().min(10),
 });

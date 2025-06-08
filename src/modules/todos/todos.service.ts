@@ -9,7 +9,7 @@ import { TAuthUser } from 'src/common/decorator/user.decorator';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
-interface ServiceResponse<T = any> {
+export interface ServiceResponse<T = any> {
   message: string;
   data?: T;
   statusCode?: number;

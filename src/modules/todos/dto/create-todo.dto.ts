@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@anatine/zod-openapi';
 import { createZodDto } from 'nestjs-zod';

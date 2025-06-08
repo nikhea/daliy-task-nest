@@ -14,7 +14,7 @@ export default (): EnvVars => {
   return {
     PORT: parsed.data.PORT,
     MONGO_URI: parsed.data.MONGO_URI,
-    // JWT_SECRET: parsed.data.JWT_SECRET,
+    JWT_SECRET: parsed.data.JWT_SECRET,
     API_VERSION: parsed.data.API_VERSION,
     ALLOWED_ORIGINS: parsed.data.ALLOWED_ORIGINS,
     NODE_ENV: parsed.data.NODE_ENV,

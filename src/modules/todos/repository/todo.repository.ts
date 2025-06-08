@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Todo } from '../shcema/todo.schema';
+import { Todo } from '../schema/todo.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreateTodoDto } from '../dto/create-todo.dto';

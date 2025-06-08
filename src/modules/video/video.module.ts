@@ -16,7 +16,7 @@ import { VideoProcessor } from './video.worker';
         attempts: 3,
         backoff: {
           type: 'exponential',
-          delay: 5000, // 5 seconds
+          delay: 5000,
         },
       },
     }),
