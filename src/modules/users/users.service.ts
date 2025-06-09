@@ -10,6 +10,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { AuthRepository } from '../auth/repository/auth.repository';
 import { Response } from 'express';
+import { TUser } from '../../common/interface/user.interface';
 
 @Injectable()
 export class UsersService {
@@ -26,11 +27,20 @@ export class UsersService {
 
   async findProfile(id: string) {
     try {
-      const cachedUser = await this.cacheManager.get(this.CACHE_KEYS.USER(id));
+      const cachedUser: TUser | null = await this.cacheManager.get(
+        this.CACHE_KEYS.USER(id),
+      );
       if (cachedUser) {
         return {
           message: 'User found successfully',
-          data: cachedUser,
+          data: {
+            _id: cachedUser._id,
+            email: cachedUser.email,
+            isDeleted: cachedUser.isDeleted,
+            createdAt: cachedUser.createdAt,
+            updatedAt: cachedUser.updatedAt,
+            isVerified: cachedUser.isVerified,
+          },
           statusCode: HttpStatus.OK,
         };
       }
@@ -43,8 +53,18 @@ export class UsersService {
         };
       }
       await this.cacheManager.set(this.CACHE_KEYS.USER(id), user);
-      this.logger.log(`User cached successfully: ${id}`);
-      return user;
+      return {
+        message: 'User found successfully',
+        data: {
+          _id: user._id,
+          email: user.email,
+          isDeleted: user.isDeleted,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          isVerified: user.isVerified,
+        },
+        statusCode: HttpStatus.OK,
+      };
     } catch (error) {
       return {
         message: `Error finding profile for user ${id}:`,

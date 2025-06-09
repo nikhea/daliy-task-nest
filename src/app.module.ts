@@ -29,6 +29,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { AlsModule } from './modules/als/als.module';
 import { AlsMiddleware } from './common/middlware/als.middleware';
+import { RequestLoggerMiddleware } from './common/middlware/request-logger.middleware';
 
 @Module({
   imports: [
@@ -171,6 +172,6 @@ import { AlsMiddleware } from './common/middlware/als.middleware';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(AlsMiddleware).forRoutes('*');
+    consumer.apply(RequestLoggerMiddleware, AlsMiddleware).forRoutes('*');
   }
 }

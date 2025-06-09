@@ -18,7 +18,10 @@ export class AuthRepository {
     return this.userModel.find({ isDeleted: false }).exec();
   }
   async findById(id: string): Promise<User | null> {
-    return this.userModel.findOne({ _id: id, isDeleted: false }).exec();
+    return this.userModel
+      .findOne({ _id: id, isDeleted: false })
+      .populate('password')
+      .exec();
   }
 
   async findByEmail(email: string): Promise<User | null> {

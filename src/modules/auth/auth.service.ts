@@ -46,7 +46,7 @@ export class AuthService {
 
       return {
         message: 'user created successfully',
-        data: createAuthDto,
+        // data: createAuthDto,
         statusCode: HttpStatus.CREATED,
       };
     } catch (error) {
