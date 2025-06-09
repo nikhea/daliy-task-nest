@@ -1,8 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 
 @Schema({ timestamps: true, collection: 'todos' })
 export class Todo {
+  @Prop({ type: mongoose.Types.ObjectId, required: true })
+  userId: string;
   @Prop({
     type: String,
     required: true,

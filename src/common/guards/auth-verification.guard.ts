@@ -14,6 +14,7 @@ import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { TUser } from '../interface/user.interface';
 import { AuthService } from '../../modules/auth/auth.service';
+import { AlsService } from '../../modules/als/als.service';
 
 @Injectable()
 export class AuthAndVerificationGuard implements CanActivate {
@@ -21,6 +22,7 @@ export class AuthAndVerificationGuard implements CanActivate {
     private readonly reflector: Reflector,
     private jwtService: JwtService,
     private readonly authService: AuthService,
+    private readonly contextService: AlsService,
   ) {}
 
   private extractTokenFromRequest(request: Request): string {
@@ -63,19 +65,23 @@ export class AuthAndVerificationGuard implements CanActivate {
 
       const user = await this.getUser(decoded.userId);
 
-      // if (!user.isVerified) {
-      //   throw new UnauthorizedException(
-      //     'Account is not verified. Please verify your account.',
-      //   );
-      // }
+      if (!user.isVerified) {
+        throw new UnauthorizedException(
+          'Account is not verified. Please verify your account.',
+        );
+      }
 
+      this.contextService.setContext({ user });
+
+      // const contextUser = this.contextService.getUser();
+      // console.log('User from context after setting:', contextUser);
       request.user = user;
       return true;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      console.error('Auth error:', error);
+      // console.error('Auth error:', error);
       throw new UnauthorizedException('Authentication failed');
     }
   }

@@ -5,9 +5,9 @@ import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { TodoRepository } from './repository/todo.repository';
 import { FindTodosQueryDto } from './dto/find-todos-query.dto';
-import { TAuthUser } from 'src/common/decorator/user.decorator';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { AlsService } from '../als/als.service';
 
 export interface ServiceResponse<T = any> {
   message: string;
@@ -27,6 +27,7 @@ export class TodosService {
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly todoRepository: TodoRepository,
+    private readonly contextService: AlsService,
   ) {}
 
   async clearTodosCache(): Promise<void> {
@@ -52,7 +53,17 @@ export class TodosService {
    * @returns A service response containing the created todo item or an error message.
    */
   async create(createTodoDto: CreateTodoDto): Promise<ServiceResponse | any> {
+    const user = this.contextService.getUser();
+
     try {
+      if (!user) {
+        this.logger.warn('No user found in context');
+        return {
+          message: 'User not authenticated',
+          statusCode: HttpStatus.UNAUTHORIZED,
+        };
+      }
+      createTodoDto.userId = user._id;
       const data = await this.todoRepository.create(createTodoDto);
       await this.clearTodosCache();
       return {
@@ -70,37 +81,37 @@ export class TodosService {
     }
   }
 
-  async findAll(
-    query: FindTodosQueryDto,
-    user: TAuthUser | any,
-  ): Promise<ServiceResponse | any> {
+  async findAll(query: FindTodosQueryDto): Promise<ServiceResponse | any> {
+    const user = this.contextService.getUser();
+
     try {
-      this.logger.log(`Fetching todos for user: ${user}`);
+      if (!user) {
+        return {
+          message: 'User not authenticated',
+          statusCode: HttpStatus.UNAUTHORIZED,
+        };
+      }
       const cacheTodos = await this.cacheManager.get(this.CACHE_KEYS.TODOS);
 
       if (cacheTodos) {
-        this.logger.log('Returning todos from cache');
         return {
-          message: 'Todos retrieved from cache',
-          data: { cacheTodos },
           statusCode: HttpStatus.OK,
+          message: 'Todos retrieved from cache',
+          data: cacheTodos,
         };
       }
 
-      const data = await this.todoRepository.findAll();
+      const data = await this.todoRepository.findAll({
+        userId: user._id,
+        query,
+      });
       await this.cacheManager.set(this.CACHE_KEYS.TODOS, data);
-
-      this.logger.log(
-        `Retrieved ${Array.isArray(data) ? data.length : 0} todos from database`,
-      );
-
       return {
+        statusCode: HttpStatus.OK,
         message: 'Todos retrieved successfully',
         data,
-        statusCode: HttpStatus.OK,
       };
     } catch (error) {
-      this.logger.error('Failed to fetch todos', error);
       return {
         message: 'Failed to fetch todos',
         error,

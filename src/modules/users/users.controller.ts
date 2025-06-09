@@ -1,9 +1,9 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Param } from '@nestjs/common';
 import { Response } from 'express';
 import { UsersService } from './users.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthAndVerificationGuard } from '../../common/guards/auth-verification.guard';
-import { AuthenticatedRequest } from '../../common/decorator/user.decorator';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @UseGuards(AuthAndVerificationGuard)
 @ApiBearerAuth()
@@ -11,12 +11,9 @@ import { AuthenticatedRequest } from '../../common/decorator/user.decorator';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get('profile')
-  findOne(@Req() req: AuthenticatedRequest) {
-    const user = req.user;
-    return {
-      user,
-    };
+  @SkipThrottle({ short: true, medium: true, long: true })
+  @Get('profile/:id')
+  findOne(@Param('id') id: string) {
+    return this.usersService.findProfile(id);
   }
 }
-// @SkipThrottle({ short: true, medium: true, long: true })

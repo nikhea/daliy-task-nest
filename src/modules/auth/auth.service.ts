@@ -90,13 +90,11 @@ export class AuthService {
     try {
       const cachedUser = await this.cacheManager.get(this.CACHE_KEYS.USER(id));
       if (cachedUser) {
-        this.logger.log(`User found in cache: ${id}`);
         return cachedUser;
       }
 
       const user = await this.authRepository.findById(id);
       if (!user) {
-        this.logger.warn(`User not found: ${id}`);
         return null;
       }
 
@@ -106,11 +104,9 @@ export class AuthService {
         isDeleted: user.isDeleted,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
+        isVerified: user.isVerified,
       };
-
-      await this.cacheManager.set(this.CACHE_KEYS.USER(id), cleanUser);
-      this.logger.log(`User cached successfully: ${id}`);
-
+      await this.cacheManager.set(this.CACHE_KEYS.USER(id), cleanUser, 6000000);
       return cleanUser;
     } catch (error) {
       this.logger.error(`Error finding profile for user ${id}:`, error);

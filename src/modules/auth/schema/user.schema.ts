@@ -20,6 +20,9 @@ export class User extends Document {
   @Prop({ type: Boolean, default: false })
   isDeleted: boolean;
 
+  @Prop({ type: Boolean, default: false })
+  isVerified: boolean;
+
   @Prop({ type: Date })
   createdAt: Date;
 

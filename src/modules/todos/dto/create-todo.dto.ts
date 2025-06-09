@@ -21,6 +21,7 @@ export const CreateTodoSchema = z.object({
 });
 
 export class CreateTodoDto extends createZodDto(CreateTodoSchema) {
+  userId?: string;
   @ApiProperty({
     description: 'Title of the todo item',
     example: 'Buy groceries',

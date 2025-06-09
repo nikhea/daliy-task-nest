@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Injectable } from '@nestjs/common';
 import { Todo } from '../schema/todo.schema';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreateTodoDto } from '../dto/create-todo.dto';
 import { UpdateTodoDto } from '../dto/update-todo.dto';
@@ -10,12 +12,29 @@ export class TodoRepository {
     @InjectModel(Todo.name)
     private readonly todoModel: Model<Todo>,
   ) {}
+
+  setMongooseId(id: string): mongoose.Types.ObjectId {
+    return new mongoose.Types.ObjectId(id);
+  }
   async create(createTodoDto: CreateTodoDto): Promise<Todo> {
-    const createdTodo = new this.todoModel(createTodoDto);
+    const createdTodo = new this.todoModel({
+      title: createTodoDto.title,
+      description: createTodoDto.description,
+      dueDate: createTodoDto.dueDate,
+      // @ts-ignore
+      userId: this.setMongooseId(createTodoDto.userId),
+    });
     return createdTodo.save();
   }
-  async findAll(): Promise<Todo[]> {
-    return this.todoModel.find({ isDeleted: false }).exec();
+  async findAll({
+    userId,
+    query,
+  }: {
+    userId: string;
+    query: any;
+  }): Promise<Todo[]> {
+    const mongooseId = this.setMongooseId(userId);
+    return this.todoModel.find({ userId: mongooseId, isDeleted: false }).exec();
   }
   async findById(id: string): Promise<Todo | null> {
     return this.todoModel.findOne({ _id: id, isDeleted: false }).exec();

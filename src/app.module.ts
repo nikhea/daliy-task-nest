@@ -2,7 +2,12 @@
 
 /* eslint-disable @typescript-eslint/require-await */
 
-import { ExecutionContext, Module } from '@nestjs/common';
+import {
+  ExecutionContext,
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+} from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TodosModule } from './modules/todos/todos.module';
 import { UsersModule } from './modules/users/users.module';
@@ -22,6 +27,8 @@ import { BullModule } from '@nestjs/bullmq';
 import { VideoModule } from './modules/video/video.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
+import { AlsModule } from './modules/als/als.module';
+import { AlsMiddleware } from './common/middlware/als.middleware';
 
 @Module({
   imports: [
@@ -148,6 +155,7 @@ import { JwtModule } from '@nestjs/jwt';
 
     MulterModule.register(multerOptions),
     MongoDBConnectionModule,
+    AlsModule,
     AuthModule,
     UsersModule,
     TodosModule,
@@ -161,4 +169,8 @@ import { JwtModule } from '@nestjs/jwt';
     // },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(AlsMiddleware).forRoutes('*');
+  }
+}

@@ -35,8 +35,6 @@ import { UpdateTodoDto } from './dto/update-todo.dto';
 import { FindTodosQueryDto } from './dto/find-todos-query.dto';
 import { FileUploadDto, SingleFileUploadDto } from './dto/file-upload.dto';
 import { SetTodocompletedDto } from './dto/set-isCompleted.dto';
-import { CurrentUser } from 'src/common/decorator/user.decorator';
-import { TAuthUser } from 'src/common/decorator/user.decorator';
 import {
   fileNameAndSizeMixUpload,
   multerOptions,
@@ -109,8 +107,8 @@ export class TodosController {
     schema: response,
   })
   @ApiResponse({ status: 404, description: 'No todos found' })
-  findAll(@Query() query: FindTodosQueryDto, @CurrentUser() user: TAuthUser) {
-    return this.todosService.findAll(query, user);
+  findAll(@Query() query: FindTodosQueryDto) {
+    return this.todosService.findAll(query);
   }
 
   @Get(':id')
