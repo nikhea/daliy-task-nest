@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
+import { nanoid } from 'nanoid';
 
 @Injectable()
 export class AuthHelper {
@@ -36,6 +35,10 @@ export class AuthHelper {
       refreshToken,
     };
   }
+  generateResetToken(): string {
+    const resetToken = nanoid(64);
+    return resetToken;
+  }
   getCookieSettings(name: string) {
     return {
       name,
@@ -57,5 +60,11 @@ export class AuthHelper {
       tokenPair.accessToken,
       cookieOptions.settings,
     );
+  }
+
+  generateExpiryDate(dateLength: number): Date {
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + dateLength);
+    return expiryDate;
   }
 }

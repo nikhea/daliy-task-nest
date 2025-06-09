@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 import {
   HttpStatus,
@@ -15,6 +16,14 @@ import { AuthHelper } from './helper/auth.helper';
 import { Response } from 'express';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { AlsService } from '../als/als.service';
+import { TUser } from '../../common/interface/user.interface';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetTokenRepository } from './repository/reset-token.schema';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -24,9 +33,12 @@ export class AuthService {
   };
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @InjectQueue('mails') private readonly mailsQueue: Queue,
     private readonly authRepository: AuthRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
+    private readonly resetTokenRepository: ResetTokenRepository,
     private readonly authHelper: AuthHelper,
+    private readonly contextService: AlsService,
   ) {}
 
   async signUp(createAuthDto: CreateAuthDto): Promise<ServiceResponse | any> {
@@ -46,7 +58,6 @@ export class AuthService {
 
       return {
         message: 'user created successfully',
-        // data: createAuthDto,
         statusCode: HttpStatus.CREATED,
       };
     } catch (error) {
@@ -66,7 +77,7 @@ export class AuthService {
         !user ||
         !(await this.authHelper.comparePassword(password, user.password))
       ) {
-        return res.status(HttpStatus.BAD_REQUEST).json({
+        return res.status(HttpStatus.UNAUTHORIZED).json({
           message: 'wrong credentials',
         });
       }
@@ -82,6 +93,153 @@ export class AuthService {
       this.logger.error('Failed to login user', error);
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         message: 'Failed to login user',
+      });
+    }
+  }
+
+  async changePassword(
+    changePasswordDto: ChangePasswordDto,
+    res: Response,
+  ): Promise<ServiceResponse | any> {
+    const { newPassword, oldPassword } = changePasswordDto;
+    const user = this.contextService.getUser() as TUser;
+
+    try {
+      const userExist = await this.authRepository.findByEmail(user.email);
+
+      if (!userExist) {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+          message: 'user not found',
+        });
+      }
+
+      const passwordMatch = await this.authHelper.comparePassword(
+        oldPassword,
+        user.password,
+      );
+      if (!passwordMatch) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          message: 'wrong credentials',
+        });
+      }
+
+      const hashedPassword = await this.authHelper.hashPassword(newPassword);
+      userExist.password = hashedPassword;
+      await userExist.save();
+
+      await this.cacheManager.set(
+        this.CACHE_KEYS.USER(user._id),
+        userExist,
+        6000000,
+      );
+
+      return res.status(HttpStatus.OK).json({
+        message: 'password changed',
+        data: {
+          _id: user._id,
+          email: user.email,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          isVerified: user.isVerified,
+        },
+      });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Failed to login user',
+        error,
+      });
+    }
+  }
+
+  async forgotPassword(
+    forgotPasswordDto: ForgotPasswordDto,
+    res: Response,
+  ): Promise<ServiceResponse | any> {
+    const { email } = forgotPasswordDto;
+
+    try {
+      const userExist = await this.authRepository.findByEmail(email);
+
+      if (!userExist) {
+        return res.status(HttpStatus.OK).json({
+          message: 'if this user exists, they will receive an email',
+        });
+      }
+      const resetToken = this.authHelper.generateResetToken();
+
+      const savedToken = await this.resetTokenRepository.create({
+        token: resetToken,
+        userId: userExist._id,
+        expiryDate: this.authHelper.generateExpiryDate(1),
+      });
+
+      if (savedToken) {
+        const link = `http://localhost:4000/api/v1/auth/reset-password?token=${resetToken}`;
+        const htmlLink = `<a href="${link}">Click here to reset your password</a>`;
+
+        await this.mailsQueue.add('resetPassword', {
+          email: email,
+          subject: 'resetPassword',
+          html: htmlLink,
+        });
+        // await this.mailService.sendMail(email, 'resetPassword', htmlLink);
+      }
+
+      return res.status(HttpStatus.OK).json({
+        message: 'if this user exists, they will receive an email',
+        resetToken,
+      });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Failed to login user',
+        error,
+      });
+    }
+  }
+
+  async resetPassword(
+    forgotPasswordDto: ResetPasswordDto,
+    res: Response,
+  ): Promise<ServiceResponse | any> {
+    const { token, newPassword } = forgotPasswordDto;
+
+    try {
+      const existToken = await this.resetTokenRepository.findOne(token);
+
+      if (!existToken) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          message: 'invalid link',
+        });
+      }
+
+      const userExist = await this.authRepository.findByUserId(
+        existToken.userId,
+      );
+
+      if (!userExist) {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+          message: 'user not found',
+        });
+      }
+
+      const hashedPassword = await this.authHelper.hashPassword(newPassword);
+      userExist.password = hashedPassword;
+      await userExist.save();
+
+      return res.status(HttpStatus.OK).json({
+        message: 'password rest sucessfully',
+        data: {
+          _id: userExist._id,
+          email: userExist.email,
+          createdAt: userExist.createdAt,
+          updatedAt: userExist.updatedAt,
+          isVerified: userExist.isVerified,
+        },
+      });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Failed to login user',
+        error,
       });
     }
   }
@@ -105,6 +263,7 @@ export class AuthService {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
         isVerified: user.isVerified,
+        password: user.password,
       };
       await this.cacheManager.set(this.CACHE_KEYS.USER(id), cleanUser, 6000000);
       return cleanUser;
@@ -119,8 +278,6 @@ export class AuthService {
     res: Response,
   ): Promise<ServiceResponse | any> {
     try {
-      console.log({ refreshToken });
-
       if (!refreshToken) {
         return res.status(HttpStatus.UNAUTHORIZED).json({
           message: 'No refresh token provided',
@@ -157,8 +314,7 @@ export class AuthService {
   async generateAndStoreToken(userId: string, res: Response) {
     try {
       const token = this.authHelper.generateToken(userId);
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 7);
+      const expiryDate: Date = this.authHelper.generateExpiryDate(7);
       const userIdMongoose = this.refreshTokenRepository.setMongooseId(userId);
       await this.refreshTokenRepository.hardDeleteByUserId(userIdMongoose);
       await this.refreshTokenRepository.create({

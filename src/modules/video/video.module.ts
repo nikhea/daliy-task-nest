@@ -9,10 +9,10 @@ import { VideoProcessor } from './video.worker';
     BullModule.registerQueue({
       name: 'video',
       defaultJobOptions: {
-        // removeOnComplete: true,
-        // removeOnFail: true,
-        removeOnComplete: 1000,
-        removeOnFail: 3000,
+        removeOnComplete: true,
+        removeOnFail: true,
+        // removeOnComplete: 1000,
+        // removeOnFail: 3000,
         attempts: 3,
         backoff: {
           type: 'exponential',

@@ -10,6 +10,9 @@ import {
   RefreshToken,
   RefreshTokenSchema,
 } from './schema/refresh-token.schema';
+import { ResetToken, ResetTokenSchema } from './schema/reset-token.shcema';
+import { ResetTokenRepository } from './repository/reset-token.schema';
+import { MailModule } from '../mail/mail.module';
 
 @Global()
 @Module({
@@ -17,10 +20,18 @@ import {
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: RefreshToken.name, schema: RefreshTokenSchema },
+      { name: ResetToken.name, schema: ResetTokenSchema },
     ]),
+    MailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, RefreshTokenRepository, AuthHelper],
+  providers: [
+    AuthService,
+    AuthRepository,
+    RefreshTokenRepository,
+    ResetTokenRepository,
+    AuthHelper,
+  ],
   exports: [AuthRepository, AuthService],
 })
 export class AuthModule {}
