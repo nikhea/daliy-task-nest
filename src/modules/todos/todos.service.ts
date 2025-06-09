@@ -122,11 +122,8 @@ export class TodosService {
 
   async findOne(id: string): Promise<ServiceResponse | any> {
     try {
-      this.logger.log(`Fetching todo with id: ${id}`);
-
       const cachedTodo = await this.cacheManager.get(this.CACHE_KEYS.TODO(id));
       if (cachedTodo) {
-        this.logger.log(`Returning todo ${id} from cache`);
         return {
           message: 'Todo retrieved from cache',
           data: { cachedTodo },
@@ -137,7 +134,6 @@ export class TodosService {
       const data = await this.todoRepository.findById(id);
 
       if (!data) {
-        this.logger.warn(`Todo with id ${id} not found`);
         return {
           message: 'Todo not found',
           statusCode: HttpStatus.NOT_FOUND,
@@ -152,7 +148,6 @@ export class TodosService {
         statusCode: HttpStatus.OK,
       };
     } catch (error) {
-      this.logger.error(`Failed to fetch todo with id: ${id}`, error);
       return {
         message: 'Failed to fetch todo',
         error,
@@ -166,12 +161,9 @@ export class TodosService {
     updateTodoDto: UpdateTodoDto,
   ): Promise<ServiceResponse | any> {
     try {
-      this.logger.log(`Updating todo with id: ${id}`);
-
       const existingTodo = await this.todoRepository.findById(id);
 
       if (!existingTodo) {
-        this.logger.warn(`Todo with id ${id} not found for update`);
         return {
           message: 'Todo not found',
           statusCode: HttpStatus.NOT_FOUND,
@@ -180,11 +172,8 @@ export class TodosService {
 
       const data = await this.todoRepository.update(id, updateTodoDto);
 
-      // Update cache with new data
       await this.cacheManager.set(this.CACHE_KEYS.TODO(id), data);
-      // Invalidate todos list cache
       await this.clearTodosCache();
-
       return {
         message: 'Todo updated successfully',
         data,
@@ -205,21 +194,14 @@ export class TodosService {
     isCompleted: boolean,
   ): Promise<ServiceResponse | any> {
     try {
-      this.logger.log(
-        `Setting completion status for todo ${id} to ${isCompleted}`,
-      );
-
       if (typeof isCompleted !== 'boolean') {
         return {
           message: 'Invalid input: isCompleted must be a boolean',
           statusCode: HttpStatus.BAD_REQUEST,
         };
       }
-
       const existingTodo = await this.todoRepository.findById(id);
-
       if (!existingTodo) {
-        this.logger.warn(`Todo with id ${id} not found for completion update`);
         return {
           message: 'Todo not found',
           statusCode: HttpStatus.NOT_FOUND,
@@ -227,22 +209,14 @@ export class TodosService {
       }
 
       const data = await this.todoRepository.setCompleted(id, isCompleted);
-
-      // Update cache with new data
       await this.cacheManager.set(this.CACHE_KEYS.TODO(id), data);
-      // Invalidate todos list cache
       await this.clearTodosCache();
-
       return {
         message: `Todo marked as ${isCompleted ? 'completed' : 'incomplete'}`,
         data,
         statusCode: HttpStatus.OK,
       };
     } catch (error) {
-      this.logger.error(
-        `Failed to set completion status for todo ${id}`,
-        error,
-      );
       return {
         message: 'Failed to update todo completion status',
         error,
@@ -252,21 +226,14 @@ export class TodosService {
   }
   async remove(id: string): Promise<ServiceResponse | any> {
     try {
-      this.logger.log(`Removing todo with id: ${id}`);
-
       const existingTodo = await this.todoRepository.findById(id);
-
       if (!existingTodo) {
-        this.logger.warn(`Todo with id ${id} not found for deletion`);
         return {
           message: 'Todo not found',
           statusCode: HttpStatus.NOT_FOUND,
         };
       }
-
       const data = await this.todoRepository.delete(id);
-
-      // Remove from cache
       await this.cacheManager.del(this.CACHE_KEYS.TODO(id));
       await this.clearTodosCache();
 
@@ -276,7 +243,6 @@ export class TodosService {
         statusCode: HttpStatus.OK,
       };
     } catch (error) {
-      this.logger.error(`Failed to delete todo with id: ${id}`, error);
       return {
         message: 'Failed to delete todo',
         error,

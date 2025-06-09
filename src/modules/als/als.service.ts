@@ -13,12 +13,10 @@ export class AlsService {
     private readonly als: AsyncLocalStorage<AppContext>,
   ) {}
 
-  // Use this method to initialize the context in middleware
   run<T>(context: AppContext, fn: () => T): T {
     return this.als.run(context, fn);
   }
 
-  // Modified to properly update context within existing ALS context
   setContext(context: Partial<AppContext>): void {
     const currentStore = this.als.getStore();
     if (!currentStore) {
@@ -26,8 +24,6 @@ export class AlsService {
         'No AsyncLocalStorage context found. Ensure AlsMiddleware is properly configured.',
       );
     }
-
-    // Update the current store object directly
     Object.assign(currentStore, context);
   }
 
@@ -40,7 +36,6 @@ export class AlsService {
     return store?.user;
   }
 
-  // Utility method to check if context exists
   hasContext(): boolean {
     return this.als.getStore() !== undefined;
   }
