@@ -3,10 +3,10 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { ConfigService } from '@nestjs/config';
-import { setupSwagger } from './setup/swagger-setup';
-import { setupLogInit } from './setup/initLog-setup';
+import { setupSwagger } from './common/setup/swagger-setup';
+import { setupLogInit } from './common/setup/initLog-setup';
 import * as cookieParser from 'cookie-parser';
-import { ValidationPipe } from '@nestjs/common';
+// import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -29,12 +29,12 @@ async function bootstrap() {
     credentials: true,
   });
   app.useGlobalPipes(new ZodValidationPipe());
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+  // app.useGlobalPipes(
+  //   new ValidationPipe({
+  //     whitelist: true,
+  //     forbidNonWhitelisted: true,
+  //   }),
+  // );
 
   setupSwagger(app, api_version, server_url);
 

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -10,6 +10,8 @@ import {
   RefreshToken,
   RefreshTokenSchema,
 } from './schema/refresh-token.schema';
+
+@Global()
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -19,6 +21,6 @@ import {
   ],
   controllers: [AuthController],
   providers: [AuthService, AuthRepository, RefreshTokenRepository, AuthHelper],
-  // exports: [UserRepository],
+  exports: [AuthRepository, AuthService],
 })
 export class AuthModule {}

@@ -1,8 +1,8 @@
 export interface TUser {
-  _id: number;
+  _id: string;
   email: string;
-  firstname: string;
-  lastname: string;
-  token: string;
-  isVerified: boolean;
+  isDeleted?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  isVerified?: boolean;
 }

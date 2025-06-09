@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 import {
   HttpStatus,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -12,12 +13,17 @@ import { ServiceResponse } from '../todos/todos.service';
 import { LogInAuthDto } from './dto/login-auth.dto';
 import { AuthHelper } from './helper/auth.helper';
 import { Response } from 'express';
-import { RefreshTokenAuthDto } from './dto/refresh-token.dto';
-
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private readonly CACHE_KEYS = {
+    USERS: 'users',
+    USER: (id: string) => `user-${id}`,
+  };
   constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly authRepository: AuthRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly authHelper: AuthHelper,
@@ -80,14 +86,51 @@ export class AuthService {
     }
   }
 
+  async findProfile(id: string) {
+    try {
+      const cachedUser = await this.cacheManager.get(this.CACHE_KEYS.USER(id));
+      if (cachedUser) {
+        this.logger.log(`User found in cache: ${id}`);
+        return cachedUser;
+      }
+
+      const user = await this.authRepository.findById(id);
+      if (!user) {
+        this.logger.warn(`User not found: ${id}`);
+        return null;
+      }
+
+      const cleanUser = {
+        _id: user._id,
+        email: user.email,
+        isDeleted: user.isDeleted,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
+
+      await this.cacheManager.set(this.CACHE_KEYS.USER(id), cleanUser);
+      this.logger.log(`User cached successfully: ${id}`);
+
+      return cleanUser;
+    } catch (error) {
+      this.logger.error(`Error finding profile for user ${id}:`, error);
+      throw error;
+    }
+  }
+
   async refreshToken(
-    createAuthDto: RefreshTokenAuthDto,
+    refreshToken: string,
     res: Response,
   ): Promise<ServiceResponse | any> {
     try {
-      const token = await this.refreshTokenRepository.findOne(
-        createAuthDto.token,
-      );
+      console.log({ refreshToken });
+
+      if (!refreshToken) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          message: 'No refresh token provided',
+        });
+      }
+      const token = await this.refreshTokenRepository.findOne(refreshToken);
 
       if (!token) {
         return res.status(HttpStatus.BAD_REQUEST).json({

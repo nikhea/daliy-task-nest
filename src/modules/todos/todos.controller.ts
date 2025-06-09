@@ -17,7 +17,7 @@ import {
   UploadedFile,
   UploadedFiles,
   BadRequestException,
-  // UseGuards,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,7 +27,7 @@ import {
   ApiOkResponse,
   ApiConsumes,
   ApiBody,
-  // ApiBearerAuth,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { TodosService } from './todos.service';
 import { Cat, CreateTodoDto } from './dto/create-todo.dto';
@@ -35,7 +35,6 @@ import { UpdateTodoDto } from './dto/update-todo.dto';
 import { FindTodosQueryDto } from './dto/find-todos-query.dto';
 import { FileUploadDto, SingleFileUploadDto } from './dto/file-upload.dto';
 import { SetTodocompletedDto } from './dto/set-isCompleted.dto';
-// import { AuthAndVerificationGuard } from 'src/common/guards/protect.guard';
 import { CurrentUser } from 'src/common/decorator/user.decorator';
 import { TAuthUser } from 'src/common/decorator/user.decorator';
 import {
@@ -43,7 +42,12 @@ import {
   multerOptions,
   validateUploadedFiles,
 } from '../../common/constant/constant';
-import { seconds, SkipThrottle, Throttle } from '@nestjs/throttler';
+import {
+  // seconds,
+  SkipThrottle,
+  // Throttle
+} from '@nestjs/throttler';
+import { AuthAndVerificationGuard } from '../../common/guards/auth-verification.guard';
 // import { CacheInterceptor } from '@nestjs/cache-manager';
 
 const response = {
@@ -67,9 +71,9 @@ const response = {
 
 @ApiTags('todos')
 // @UseGuards(AuthGuard)
-// @UseGuards(AuthAndVerificationGuard)
-// @ApiBearerAuth()
+@ApiBearerAuth()
 // @UseInterceptors(CacheInterceptor)
+@UseGuards(AuthAndVerificationGuard)
 @Controller('todos')
 export class TodosController {
   constructor(private readonly todosService: TodosService) {}
