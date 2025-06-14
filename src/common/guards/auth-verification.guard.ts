@@ -81,7 +81,7 @@ export class AuthAndVerificationGuard implements CanActivate {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      // console.error('Auth error:', error);
+      console.error('Auth error:', error);
       throw new UnauthorizedException('Authentication failed');
     }
   }

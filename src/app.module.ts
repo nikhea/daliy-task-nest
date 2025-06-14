@@ -34,6 +34,9 @@ import { AlsModule } from './modules/als/als.module';
 import { AlsMiddleware } from './common/middlware/als.middleware';
 import { RequestLoggerMiddleware } from './common/middlware/request-logger.middleware';
 import { MailModule } from './modules/mail/mail.module';
+import { PostsModule } from './modules/posts/posts.module';
+import { CommentsModule } from './modules/comments/comments.module';
+import { SharedModule } from './modules/shared/shared.module';
 
 @Module({
   imports: [
@@ -143,8 +146,11 @@ import { MailModule } from './modules/mail/mail.module';
     AuthModule,
     UsersModule,
     TodosModule,
+    PostsModule,
+    CommentsModule,
     VideoModule,
     MailModule,
+    SharedModule,
   ],
   controllers: [],
   providers: [
@@ -156,7 +162,12 @@ import { MailModule } from './modules/mail/mail.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RequestLoggerMiddleware, AlsMiddleware).forRoutes('*');
+    consumer
+      .apply(
+        // RequestLoggerMiddleware,
+        AlsMiddleware,
+      )
+      .forRoutes('*');
   }
 }
 
